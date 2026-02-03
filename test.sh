@@ -1,3 +1,4 @@
+#!/bin/bash
 # Setup nvm and install pre-req
 if command -v node > /dev/null 2>&1; then
   echo "Node.js is already installed. Current version: $(node -v)"
@@ -45,7 +46,9 @@ docker compose up -d
 echo " Docker started."
 
 sleep 5
-export CLN_RUNE=$(docker exec ln-node lightning-cli --network=regtest createrune restrictions='[]' | grep -o '"rune": "[^"]*"' | cut -d'"' -f4)
+export ALICE_RUNE=$(docker exec alice lightning-cli --network=regtest createrune restrictions='[]' | grep -o '"rune": "[^"]*"' | cut -d'"' -f4)
+export BOB_RUNE=$(docker exec bob lightning-cli --network=regtest createrune restrictions='[]' | grep -o '"rune": "[^"]*"' | cut -d'"' -f4)
+export CAROL_RUNE=$(docker exec carol lightning-cli --network=regtest createrune restrictions='[]' | grep -o '"rune": "[^"]*"' | cut -d'"' -f4)
 
 # Run the test scripts
 /bin/bash run.sh

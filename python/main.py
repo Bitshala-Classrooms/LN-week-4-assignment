@@ -3,9 +3,33 @@ import os
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 
-def call_cln(method, params=None):
-    rune = os.environ.get('CLN_RUNE')
+def call_alice_ln(method, params=None):
+    """Call Alice's Lightning node via CLN REST API on port 3010"""
+    rune = os.environ.get('ALICE_RUNE')
     url = f'http://localhost:3010/v1/{method}'
+    response = requests.post(
+        url,
+        json=params or {},
+        headers={'Rune': rune}
+    )
+    return response.json()
+
+
+def call_bob_ln(method, params=None):
+    """Call Bob's Lightning node via CLN REST API on port 3011"""
+    rune = os.environ.get('BOB_RUNE')
+    url = f'http://localhost:3011/v1/{method}'
+    response = requests.post(
+        url,
+        json=params or {},
+        headers={'Rune': rune}
+    )
+    return response.json()
+
+def call_carol_ln(method, params=None):
+    """Call Carol's Lightning node via CLN REST API on port 3012"""
+    rune = os.environ.get('CAROL_RUNE')
+    url = f'http://localhost:3012/v1/{method}'
     response = requests.post(
         url,
         json=params or {},
@@ -20,36 +44,69 @@ def main():
         rpc = AuthServiceProxy("http://alice:password@localhost:18443")
         print("Blockchain Info:", rpc.getblockchaininfo())
 
-        # Get Lightning node info
-        ln_info = call_cln('getinfo')
-        print("Lightning Node Info:", ln_info)
+        # Get Alice's node info
+        alice_info = call_alice_ln("getinfo")
+        print("Alice Node Info:", alice_info)
 
-        # Create a new address for funding using lightning-cli and store it in CLN_ADDRESS
+        # Get Bob's node info
+        bob_info = call_bob_ln("getinfo")
+        print("Bob Node Info:", bob_info)
 
-        # Check if wallet exists, if not Create a bitcoin wallet named 'mining_wallet' using bitcoin-cli for mining
+        # Get Carol's node info
+        carol_info = call_carol_ln("getinfo")
+        print("Carol Node Info:", carol_info)
 
-        # Generate a new address and mine blocks to it. How many blocks need to mined? Why?
+        # Create a bitcoin wallet named 'mining_wallet' if it doesn't exist
 
-        # Fund the Lightning node by sending 0.1 BTC from the mining wallet to CLN_ADDRESS
+        # Generate a mining address and mine initial blocks
 
-        # Confirm the funding transaction by mining 6 blocks
+        # Create and fund an on-chain address for Alice
 
-        # Verify Lightning wallet balance using lightning-cli listfunds
+        # Create and fund an on-chain address for Bob
 
-        # Create an invoice with parameters and store the invoice string:
-        # - Amount: 50,000 satoshis (50000000 millisatoshis)
-        # - Label: Generate unique label using timestamp (e.g., "invoice_$(date +%s)")
-        # - Description: "Coffee Payment"
-        # - Expiry: 3600 seconds
+        # Create and fund an on-chain address for Carol
 
-        # Decode the invoice string using lightning-cli decodepay and verify the parameters
+        # Mine blocks to confirm funding transactions
 
-        # Output the invoice details in the specified format to out.txt
-        # - Payment hash
-        # - BOLT11 invoice string
-        # - Amount
-        # - Description
-        # - Expiry time
+        # Verify on-chain balance for Alice, Bob, and Carol
+
+        # Get node IDs for Alice, Bob, and Carol
+
+        # Connect them as peers
+
+        # Alice opens a 500,000 sat channel with Bob
+
+        # Bob opens a 300,000 sat channel with Carol
+
+        # Carol opens a 400,000 sat channel with Alice
+
+        # Mine at least 6 blocks to confirm channels
+
+        # Wait for channels to reach CHANNELD_NORMAL state
+
+        # Check opener's local balance for all channels
+
+        # Alice creates a BOLT11 invoice for 150,000 sats and description "Circular Rebalance"
+
+        # Extract the BOLT11 string and payment hash from the invoice
+
+        # Alice pays her own invoice
+
+        # Extract payment preimage and status
+
+        # Check local balances for all channels
+
+        # Write to out.txt:
+        # - Payment Hash
+        # - Payment Preimage
+        # - BOLT11 Invoice
+        # - local balance between Alice and Bob before CR in msat
+        # - local balance between Alice and Bob after CR in msat
+        # - local balance between Bob and Carol before CR in msat
+        # - local balance between Bob and Carol after CR in msat
+        # - local balance between Carol and Alice before CR in msat
+        # - local balance between Carol and Alice after CR in msat
+
     except JSONRPCException as e:
         print("An error occurred", e)
 

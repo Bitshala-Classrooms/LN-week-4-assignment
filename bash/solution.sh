@@ -7,35 +7,62 @@ blockchain_info=$(bitcoin_cli getblockchaininfo)
 # Print the blockchain info
 echo "Blockchain Info: $blockchain_info"
 
-# Get node info using lightning-cli
-node_info=$(ln_cli getinfo)
+alice_info=$(alice_ln_cli getinfo)
+echo "Alice Node Info: $alice_info"
 
-# Print the node info
-echo "Node Info: $node_info"
+bob_info=$(bob_ln_cli getinfo)
+echo "Bob Node Info: $bob_info"
 
-# Create a new address for funding using lightning-cli and store it in CLN_ADDRESS
+carol_info=$(carol_ln_cli getinfo)
+echo "Carol Node Info: $carol_info"
 
-# Check if wallet exists, if not Create a bitcoin wallet named 'mining_wallet' using bitcoin-cli for mining
+# Create a bitcoin wallet named 'mining_wallet' if it doesn't exist
 
-# Generate a new address and mine blocks to it. How many blocks need to mined? Why?
+# Generate a mining address and mine initial blocks
 
-# Fund the Lightning node by sending 0.1 BTC from the mining wallet to CLN_ADDRESS
+# Create and fund an on-chain address for Alice
 
-# Confirm the funding transaction by mining 6 blocks
+# Create and fund an on-chain address for Bob
 
-# Verify Lightning wallet balance using lightning-cli listfunds
+# Create and fund an on-chain address for Carol
 
-# Create an invoice with parameters and store the invoice string:
-# - Amount: 50,000 satoshis (50000000 millisatoshis)
-# - Label: Generate unique label using timestamp (e.g., "invoice_$(date +%s)")
-# - Description: "Coffee Payment"
-# - Expiry: 3600 seconds
+# Mine blocks to confirm funding transactions
 
-# Decode the invoice string using lightning-cli decodepay and verify the parameters
+# Verify on-chain balance for Alice, Bob, and Carol
 
-# Output the invoice details in the specified format to out.txt
-# - Payment hash
-# - BOLT11 invoice string
-# - Amount
-# - Description
-# - Expiry time
+# Get node IDs for Alice, Bob, and Carol
+
+# Connect them as peers
+
+# Alice opens a 500,000 sat channel with Bob
+
+# Bob opens a 300,000 sat channel with Carol
+
+# Carol opens a 400,000 sat channel with Alice
+
+# Mine at least 6 blocks to confirm channels
+
+# Wait for channels to reach CHANNELD_NORMAL state
+
+# Check opener's local balance for all channels
+
+# Alice creates a BOLT11 invoice for 150,000 sats and description "Circular Rebalance"
+
+# Extract the BOLT11 string and payment hash from the invoice
+
+# Alice pays her own invoice
+
+# Extract payment preimage and status
+
+# Check local balances for all channels
+
+# Write to out.txt:
+# - Payment Hash
+# - Payment Preimage
+# - BOLT11 Invoice
+# - local balance between Alice and Bob before CR in msat
+# - local balance between Alice and Bob after CR in msat
+# - local balance between Bob and Carol before CR in msat
+# - local balance between Bob and Carol after CR in msat
+# - local balance between Carol and Alice before CR in msat
+# - local balance between Carol and Alice after CR in msat
