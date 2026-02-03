@@ -1,7 +1,7 @@
 {
-  "name": "lbtcl-week-1-assignment",
+  "name": "ln-week-4-assignment",
   "version": "1.0.0",
-  "description": "Week 1 assignment for LBTCL",
+  "description": "Week 4 assignment for Mastering Lightning Network",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

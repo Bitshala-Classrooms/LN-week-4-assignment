@@ -1,13 +1,13 @@
-# Mastering Lightning Network - Week 1: Generating Lightning Invoice
+# Mastering Lightning Network - Week 4: Circular Rebalancing & Channel Liquidity
 
 ## Overview
 
-In this first week you will:
+In this exercise you will:
 
 1. **Set up** Bitcoin Core and Core Lightning (CLN) nodes using Docker.
 2. **Interact** with both Bitcoin Core and Lightning nodes on `regtest`.
-3. **Fund** a Lightning node and create a BOLT11 invoice.
-4. **Output** a small report file named (`out.txt`) in the **current dicectory** demonstrating you can fund a Lightning node and generate valid invoices.
+3. **Build** a circular channel topology across three Lightning nodes and **Execute** a circular rebalancing payment where Alice pays herself through the ring.
+4. **Output** a report file `out.txt` in the **current directory**
 5. **Target Locations** for the solution code for each language are given below:
    - Bash: [solution.sh](./bash/solution.sh)
    - JavaScript: [index.js](./javascript/index.js)
@@ -16,9 +16,9 @@ In this first week you will:
 
 ## Problem Statement
 
-Lightning Network is a Layer 2 payment protocol built on top of Bitcoin. Before a Lightning node can send or receive payments, it needs to have on-chain Bitcoin funds and create payment channels. The following exercise introduces us to the basics of setting up and funding a Lightning node. 
+Using a 3-node network, create a circular topology by opening channels between **Alice and Bob** (500,000 sats) ; **Bob and Carol** (300,000 sats) ; **Carol and Alice** (400,000 sats)
 
-We will be using Docker to set up Bitcoin Core and Core Lightning nodes, after which we fund the Lightning node with `regtest` Bitcoin and generate a BOLT 11 Lightning invoice
+Execute a circular rebalancing payment where Alice pays herself **150,000 satoshis** by routing the payment through Bob and Carol.
 
 ## Solution Requirements
 
@@ -32,9 +32,15 @@ Services:
 - **bitcoind**: Bitcoin Core node running on regtest
   - RPC port: 18443
   - RPC credentials: alice/password
-- **cln** (ln-node): Core Lightning node
-  - Connected to bitcoind
-  - Network: regtest
+- **alice**: Core Lightning node
+  - Lightning P2P port: 9735 (host: 9735)
+  - CLN REST port: 3010
+- **bob**: Core Lightning node
+  - Lightning P2P port: 9735 (host: 9736)
+  - CLN REST port: 3011
+- **carol**: Core Lightning node
+  - Lightning P2P port: 9735 (host: 9737)
+  - CLN REST port: 3012
 
 To start the services:
 ```bash
@@ -53,32 +59,48 @@ Each implementation uses helper functions located in the directories.
 
 Your program must:
 
-- Create a new Lightning address
-
-- Create a mining wallet exists and generate a new address from the mining wallet
-- Mine new blocks to this address until you get positive wallet balance. (use `generatetoaddress`) (observe how many blocks it took to get to a positive balance)
-- Write a short comment describing why wallet balance for block rewards behaves that way.
-
-- Fund the Lightning node from the mining wallet and confirm the transaction
-
-- Verify Lightning wallet balance and create a Lightning invoice
+- Create a bitcoin mining wallet and mine initial blocks
+- Fund Alice's, Bob's and Carol's on-chain wallets from the mining wallet
+- Mine blocks to confirm funding transactions and verify balances
+- Get node IDs for Alice, Bob, and Carol
+- Connect peers (Alice -> Bob, Bob -> Carol, Carol -> Alice)
+- Open channels as specified in problem statement
+- Mine blocks to confirm channels
+- Wait for channels to reach `CHANNELD_NORMAL` state
+- Record opener's local balance for each Channel
+- Alice generates a 150,000 sat invoice with description "Circular Rebalance"
+- Alice pays her own invoice
+- Verify the payment status is `complete`
+- Extract payment hash and preimage
+- Record local balance for each Channel
+- Write output to `out.txt` in the specified format
 
 ### Output
 
 Output the following invoice details to `out.txt` in the root directory. Each attribute should be on a new line:
-- Payment hash
-- BOLT11 invoice string
-- Amount in millisatoshis
-- Description
-- Expiry time
+- Payment Hash (64 char hex)
+- Payment Preimage (64 char hex)
+- BOLT11 Invoice string
+- local balance between **Alice and Bob** before circular rebalancing
+- local balance between **Alice and Bob** after circular rebalancing
+- local balance between **Bob and Carol** before circular rebalancing
+- local balance between **Bob and Carol** after circular rebalancing
+- local balance between **Carol and Alice** before circular rebalancing
+- local balance between **Carol and Alice** after circular rebalancing
+
+> **Note**: Exact msat values will vary due to channel reserves and routing fees. Key property to note is, each "after" value is less than its corresponding "before" value, i.e. liquidity moved along the payment path.
 
 Sample output file:
 ```
-b47538583f85aaaabceaabf4b4ee7014d12aa11fa2f87cd0d9c7041377ae524d
-lnbcrt500u1p55zy5ksp5m4p9gqetlzseqq8caqqss739tfdxdvw5tfk4t3qqkkaggl6g3mkqpp5k36nskplsk424082406tfmnszngj4ggl5tu8e5xecuzpxaaw2fxsdqhgdhkven9v5s9qcted4jkuaqcqp29qxpqysgqhff9sgvpwyatd7t4merqshgngk9jph5rqzxw95g0kpf0wny7ahajn52fc8wd8tq0jl7w5eazh4qfwnfxdya8t0s4ma54rm2z8j6rjqqqnxqtjx
-50000000
-Coffee Payment
-3600
+a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2
+lnbcrt1500u1pn...
+499019000
+349019000
+298019000
+148019000
+399019000
+249019000
 ```
 
 ## Code Structure
@@ -94,7 +116,9 @@ Each language implementation follows a consistent pattern:
 
 Helper functions abstract Docker CLI interactions:
 - `bitcoin_cli(command)`: Execute bitcoin-cli commands via Docker
-- `ln_cli(command)`: Execute lightning-cli commands via Docker
+- `alice_ln_cli(command)`: Execute lightning-cli for Alice via Docker
+- `bob_ln_cli(command)`: Execute lightning-cli for Bob via Docker
+- `carol_ln_cli(command)`: Execute lightning-cli for Carol via Docker
 
 ## Local Testing
 
@@ -104,7 +128,7 @@ Helper functions abstract Docker CLI interactions:
 | -------------- |----------------------------------------|
 | **Bash**       | Docker, Docker Compose, `jq`           |
 | **JavaScript** | Docker, Docker Compose, Node.js ≥ 20   |
-| **Python**     | Docker, Docker Compose, Python ≥ 3.9  |
+| **Python**     | Docker, Docker Compose, Python ≥ 3.9   |
 | **Rust**       | Docker, Docker Compose, Rust toolchain |
 
 ### Setup Steps
@@ -183,13 +207,13 @@ Helper functions abstract Docker CLI interactions:
 
 3. **Start the nodes**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 ### Local Testing Steps
 It's a good idea to run the whole test locally to ensure your code is working properly.
 
-- Uncomment the specific line in [run.sh](./run.sh) corresponding to your language of choice. 
+- Uncomment the specific line in [run.sh](./run.sh) corresponding to your language of choice.
 - Grant execution permission to [test.sh](./test.sh), by running `chmod +x ./test.sh`.
 - Execute `./test.sh`.
 - The test script will run your script and verify the output. If the test script passes, you have successfully completed the challenge and are ready to submit your solution.
@@ -198,7 +222,7 @@ It's a good idea to run the whole test locally to ensure your code is working pr
 
 - If docker containers not running ensure `docker-compose up -d` completed successfully
 - Make sure Docker daemon is running and you have permissions using `docker ps`
-- Ensure `out.txt` has exactly 5 lines in the correct order
+- Ensure `out.txt` has exactly 9 lines in the correct order
 - The autograder will run the test script on an Ubuntu 22.04 environment. Make sure your script is compatible with this environment.
 - If you are unable to run the test script locally, you can submit your solution and check the results on the Github.
 
@@ -207,7 +231,7 @@ It's a good idea to run the whole test locally to ensure your code is working pr
 - Commit all code inside the appropriate language directory and the modified `run.sh`.
   ```
   git add .
-  git commit -m "Week 1 solution"
+  git commit -m "Week 4 solution"
   ```
 - Push to the main branch:
   ```
