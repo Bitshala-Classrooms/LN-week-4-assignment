@@ -1,4 +1,4 @@
-# Mastering Lightning Network - Week 4: Circular Rebalancing & Channel Liquidity
+# Mastering Lightning Network - Exercise 4: Circular Rebalancing & Channel Liquidity
 
 ## Overview
 
